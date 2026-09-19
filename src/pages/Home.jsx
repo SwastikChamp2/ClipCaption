@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import Navbar from "../components/Navbar";
 import {
     ArrowRight,
     Check,
@@ -101,104 +102,7 @@ function MagneticButton({ children, className = "", onClick }) {
     );
 }
 
-/* =========================================================
-   NAVBAR
-========================================================= */
 
-function Navbar() {
-    const [menuOpen, setMenuOpen] = useState(false);
-
-    return (
-        <nav className="fixed left-0 right-0 top-0 z-50">
-            <div className="mx-auto mt-4 flex max-w-7xl items-center justify-between rounded-full border border-black/[0.07] bg-white/75 px-4 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.05)] backdrop-blur-xl md:px-5">
-                <a href="#" className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-black text-white">
-                        <Sparkles size={15} strokeWidth={2.3} />
-                    </div>
-
-                    <span className="text-[15px] font-semibold tracking-[-0.03em]">
-                        caption<span className="text-neutral-400">flow</span>
-                    </span>
-                </a>
-
-                <div className="hidden items-center gap-8 md:flex">
-                    <a
-                        href="#how"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        How it works
-                    </a>
-                    <a
-                        href="#features"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Features
-                    </a>
-                    <a
-                        href="#workflow"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Workflow
-                    </a>
-                    <a
-                        href="#pricing"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Pricing
-                    </a>
-                </div>
-
-                <div className="hidden items-center gap-3 md:flex">
-                    <button className="px-3 py-2 text-[13px] font-medium text-neutral-500 transition hover:text-black">
-                        Log in
-                    </button>
-
-                    <MagneticButton className="group flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-neutral-800">
-                        Start creating
-                        <ArrowRight
-                            size={14}
-                            className="transition-transform group-hover:translate-x-0.5"
-                        />
-                    </MagneticButton>
-                </div>
-
-                <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 md:hidden"
-                >
-                    {menuOpen ? <X size={17} /> : <Menu size={17} />}
-                </button>
-            </div>
-
-            {menuOpen && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mx-4 mt-2 rounded-3xl border border-black/[0.06] bg-white p-5 shadow-xl md:hidden"
-                >
-                    <div className="flex flex-col gap-5">
-                        <a href="#how" onClick={() => setMenuOpen(false)}>
-                            How it works
-                        </a>
-                        <a href="#features" onClick={() => setMenuOpen(false)}>
-                            Features
-                        </a>
-                        <a href="#workflow" onClick={() => setMenuOpen(false)}>
-                            Workflow
-                        </a>
-                        <a href="#pricing" onClick={() => setMenuOpen(false)}>
-                            Pricing
-                        </a>
-
-                        <button className="rounded-full bg-black py-3 text-sm font-medium text-white">
-                            Start creating
-                        </button>
-                    </div>
-                </motion.div>
-            )}
-        </nav>
-    );
-}
 
 /* =========================================================
    HERO PRODUCT DEMO

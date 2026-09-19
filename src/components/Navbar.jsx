@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiArrowRight, FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi2";
 
 export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const location = useLocation();
 
-    const isPlayground = location.pathname === "/playground";
+    const navLinks = [
+        { label: "Home", to: "/" },
+        { label: "Playground", to: "/playground" },
+        { label: "Demo", to: "/demo" },
+    ];
 
     return (
         <nav className="fixed left-0 right-0 top-0 z-50 px-4 pt-4">
-            <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-black/[0.07] bg-white/80 px-4 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.05)] backdrop-blur-xl md:px-5">
+            <div className="relative mx-auto flex max-w-7xl items-center justify-between rounded-full border border-black/[0.07] bg-white/80 px-4 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.05)] backdrop-blur-xl md:px-5">
 
+                {/* Logo */}
                 <Link
                     to="/"
                     className="flex items-center gap-2.5"
@@ -27,98 +32,62 @@ export default function Navbar() {
                     </span>
                 </Link>
 
-                <div className="hidden items-center gap-8 md:flex">
-                    <Link
-                        to="/#how"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        How it works
-                    </Link>
-
-                    <Link
-                        to="/#features"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Features
-                    </Link>
-
-                    <Link
-                        to="/#workflow"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Workflow
-                    </Link>
-
-                    <Link
-                        to="/#pricing"
-                        className="text-[13px] font-medium text-neutral-500 transition hover:text-black"
-                    >
-                        Pricing
-                    </Link>
+                {/* Desktop Navigation (Centered) */}
+                <div className="hidden items-center gap-8 md:flex md:absolute md:left-1/2 md:-translate-x-1/2">
+                    {navLinks.map((link) => {
+                        const isActive = location.pathname === link.to;
+                        return (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                className={`text-[13px] font-medium transition ${
+                                    isActive
+                                        ? "text-black font-semibold"
+                                        : "text-neutral-500 hover:text-black"
+                                }`}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
                 </div>
 
+                {/* Right Action Button */}
                 <div className="hidden items-center gap-3 md:flex">
-                    {!isPlayground && (
-                        <button className="px-3 py-2 text-[13px] font-medium text-neutral-500 transition hover:text-black">
-                            Log in
-                        </button>
-                    )}
-
                     <Link
                         to="/playground"
-                        className="group flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-neutral-800"
+                        className="flex items-center gap-2 rounded-full bg-black px-4 py-2 text-[13px] font-medium text-white transition hover:bg-neutral-800"
                     >
-                        {isPlayground ? "Workspace" : "Start creating"}
-
-                        <FiArrowRight
-                            size={14}
-                            className="transition-transform duration-300 group-hover:translate-x-0.5"
-                        />
+                        Open Playground
                     </Link>
                 </div>
 
+                {/* Mobile Menu Button */}
                 <button
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 md:hidden"
+                    aria-label="Toggle navigation menu"
                 >
                     {menuOpen ? <FiX size={17} /> : <FiMenu size={17} />}
                 </button>
             </div>
 
+            {/* Mobile Navigation */}
             {menuOpen && (
                 <div className="mx-auto mt-2 max-w-7xl rounded-3xl border border-black/[0.06] bg-white p-5 shadow-xl md:hidden">
                     <div className="flex flex-col gap-5">
-                        <Link
-                            to="/#how"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-sm"
-                        >
-                            How it works
-                        </Link>
-
-                        <Link
-                            to="/#features"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-sm"
-                        >
-                            Features
-                        </Link>
-
-                        <Link
-                            to="/#workflow"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-sm"
-                        >
-                            Workflow
-                        </Link>
-
-                        <Link
-                            to="/#pricing"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-sm"
-                        >
-                            Pricing
-                        </Link>
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                onClick={() => setMenuOpen(false)}
+                                className={`text-sm ${
+                                    location.pathname === link.to ? "font-semibold text-black" : "text-neutral-600"
+                                }`}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
 
                         <Link
                             to="/playground"
