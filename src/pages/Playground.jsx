@@ -27,8 +27,6 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const ORANGE = "#FF5100";
-
 const DEFAULT_SETTINGS = {
     showBackground: true,
     backgroundColor: "#FFFFFF",
@@ -246,8 +244,13 @@ function drawTrackedText(
     }
 }
 
+// FIX: previously this only ever received `entryAnimation` for BOTH the
+// entry and exit phases, so whatever the user picked for "Exit transition"
+// was silently ignored. Now entry and exit animations are tracked
+// independently, and each contributes its own opacity/translate/scale.
 function getAnimationState(
-    animation,
+    entryAnimation,
+    exitAnimation,
     entryProgress,
     exitProgress,
     transitionSize
@@ -257,52 +260,52 @@ function getAnimationState(
     let translateY = 0;
     let scale = 1;
 
-    if (animation === "fade") {
-        opacity = entryProgress;
+    if (entryAnimation === "fade") {
+        opacity *= entryProgress;
     }
 
-    if (animation === "slide-up") {
-        translateY = (1 - entryProgress) * transitionSize;
+    if (entryAnimation === "slide-up") {
+        translateY += (1 - entryProgress) * transitionSize;
     }
 
-    if (animation === "slide-down") {
-        translateY = -(1 - entryProgress) * transitionSize;
+    if (entryAnimation === "slide-down") {
+        translateY -= (1 - entryProgress) * transitionSize;
     }
 
-    if (animation === "slide-left") {
-        translateX = (1 - entryProgress) * transitionSize;
+    if (entryAnimation === "slide-left") {
+        translateX += (1 - entryProgress) * transitionSize;
     }
 
-    if (animation === "slide-right") {
-        translateX = -(1 - entryProgress) * transitionSize;
+    if (entryAnimation === "slide-right") {
+        translateX -= (1 - entryProgress) * transitionSize;
     }
 
-    if (animation === "pop") {
-        scale = 0.85 + entryProgress * 0.15;
+    if (entryAnimation === "pop") {
+        scale *= 0.85 + entryProgress * 0.15;
     }
 
     if (exitProgress > 0) {
-        if (animation === "fade") {
+        if (exitAnimation === "fade") {
             opacity *= 1 - exitProgress;
         }
 
-        if (animation === "slide-up") {
+        if (exitAnimation === "slide-up") {
             translateY -= exitProgress * transitionSize;
         }
 
-        if (animation === "slide-down") {
+        if (exitAnimation === "slide-down") {
             translateY += exitProgress * transitionSize;
         }
 
-        if (animation === "slide-left") {
+        if (exitAnimation === "slide-left") {
             translateX -= exitProgress * transitionSize;
         }
 
-        if (animation === "slide-right") {
+        if (exitAnimation === "slide-right") {
             translateX += exitProgress * transitionSize;
         }
 
-        if (animation === "pop") {
+        if (exitAnimation === "pop") {
             scale *= 1 - exitProgress * 0.15;
         }
     }
@@ -320,7 +323,7 @@ function Toggle({ checked, onChange }) {
         <button
             type="button"
             onClick={() => onChange(!checked)}
-            className={`relative h-6 w-11 rounded-full transition ${checked ? "bg-[#FF5100]" : "bg-black/10"
+            className={`relative h-6 w-11 rounded-full transition ${checked ? "bg-black" : "bg-black/15"
                 }`}
             aria-pressed={checked}
         >
@@ -343,37 +346,69 @@ function NumberControl({
 }) {
     return (
         <div>
-            <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-semibold text-black/75">
-                    {label}
-                </label>
+            {label && (
+                <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm font-semibold text-black/75">
+                        {label}
+                    </label>
 
-                <div className="flex items-center rounded-lg border border-black/10 bg-white">
-                    <input
-                        type="number"
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={value}
-                        onChange={(e) =>
-                            onChange(
-                                clamp(
-                                    Number(e.target.value) || 0,
-                                    min,
-                                    max
+                    <div className="flex items-center rounded-lg border border-black/10 bg-white">
+                        <input
+                            type="number"
+                            min={min}
+                            max={max}
+                            step={step}
+                            value={value}
+                            onChange={(e) =>
+                                onChange(
+                                    clamp(
+                                        Number(e.target.value) || 0,
+                                        min,
+                                        max
+                                    )
                                 )
-                            )
-                        }
-                        className="w-16 bg-transparent px-2 py-1 text-right text-xs font-semibold outline-none"
-                    />
+                            }
+                            className="w-16 bg-transparent px-2 py-1 text-right text-xs font-semibold outline-none"
+                        />
 
-                    {suffix && (
-                        <span className="pr-2 text-xs text-black/40">
-                            {suffix}
-                        </span>
-                    )}
+                        {suffix && (
+                            <span className="pr-2 text-xs text-black/40">
+                                {suffix}
+                            </span>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {!label && (
+                <div className="mb-2 flex justify-end">
+                    <div className="flex items-center rounded-lg border border-black/10 bg-white">
+                        <input
+                            type="number"
+                            min={min}
+                            max={max}
+                            step={step}
+                            value={value}
+                            onChange={(e) =>
+                                onChange(
+                                    clamp(
+                                        Number(e.target.value) || 0,
+                                        min,
+                                        max
+                                    )
+                                )
+                            }
+                            className="w-16 bg-transparent px-2 py-1 text-right text-xs font-semibold outline-none"
+                        />
+
+                        {suffix && (
+                            <span className="pr-2 text-xs text-black/40">
+                                {suffix}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <input
                 type="range"
@@ -382,7 +417,7 @@ function NumberControl({
                 step={step}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="h-1.5 w-full cursor-pointer accent-[#FF5100]"
+                className="h-1.5 w-full cursor-pointer accent-black"
             />
         </div>
     );
@@ -410,7 +445,7 @@ function ColorControl({
                 <input
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium uppercase outline-none focus:border-[#FF5100]"
+                    className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium uppercase outline-none focus:border-black"
                 />
             </div>
         </div>
@@ -433,7 +468,7 @@ function SelectControl({
                 <select
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm font-medium outline-none transition focus:border-[#FF5100]"
+                    className="w-full appearance-none rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm font-medium outline-none transition focus:border-black"
                 >
                     {options.map((option) => (
                         <option
@@ -458,7 +493,7 @@ function SectionHeader({
 }) {
     return (
         <div className="mb-5 flex gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF5100]/10 text-[#FF5100]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/10 text-black">
                 <Icon size={17} />
             </div>
 
@@ -477,36 +512,53 @@ function SectionHeader({
     );
 }
 
+// FIX: this used to receive `previewRef` as a *callback function* passed
+// down from the grandparent (Playground -> ClipEditor -> here) and then
+// tried to read `previewRef.current` on it. Functions don't have a
+// `.current` property, so every drag attempt threw immediately and the
+// drag never actually moved anything. This component now owns its own
+// ref for measuring the drop zone, which also fixes the caption chip
+// being un-draggable whenever it happened to be "outside its visible
+// window" (it's now always draggable so you can position it regardless
+// of where the playhead currently is).
 function PositionOverlay({
     clip,
     settings,
-    previewRef,
     currentTime,
     duration,
     onPositionChange,
 }) {
+    const overlayRef = useRef(null);
     const draggingRef = useRef(false);
 
     const captionVisible = useMemo(() => {
         if (!clip?.text?.trim()) return false;
 
+        // FIX: duration is 0 for a brief moment before video metadata
+        // loads. With duration = 0, start/end both resolved to 0, which
+        // made `currentTime (0) >= start (0) && currentTime (0) <= end (0)`
+        // true — so the caption briefly rendered at full strength before
+        // snapping to its correct (dimmed/hidden) state once real timing
+        // kicked in. Treat "no duration yet" as "not visible".
+        if (!duration) return false;
+
         let start = 0;
-        let end = duration || Infinity;
+        let end = duration;
 
         if (settings.entryMode === "seconds") {
-            start = settings.entryValue;
+            start = clamp(settings.entryValue, 0, duration);
         } else {
-            start =
-                (duration * settings.entryValue) / 100;
+            start = (duration * clamp(settings.entryValue, 0, 100)) / 100;
         }
 
         if (settings.exitMode === "seconds") {
-            end = duration - settings.exitValue;
+            end = duration - clamp(settings.exitValue, 0, duration);
         } else {
-            end =
-                duration *
-                (1 - settings.exitValue / 100);
+            end = duration * (1 - clamp(settings.exitValue, 0, 100) / 100);
         }
+
+        start = clamp(start, 0, duration);
+        end = clamp(end, 0, duration);
 
         return currentTime >= start && currentTime <= end;
     }, [
@@ -523,22 +575,19 @@ function PositionOverlay({
 
     return (
         <div
-            ref={previewRef}
+            ref={overlayRef}
             className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
         >
             <div
-                className={`absolute cursor-move select-none ${captionVisible
-                    ? "pointer-events-auto"
-                    : "pointer-events-none opacity-30"
-                    }`}
+                className="group absolute cursor-move touch-none select-none"
                 style={{
                     left: `${clip.position.x}%`,
                     top: `${clip.position.y}%`,
                     transform: "translate(-50%, -50%)",
+                    opacity: captionVisible ? 1 : 0.4,
+                    pointerEvents: "auto",
                 }}
                 onPointerDown={(event) => {
-                    if (!captionVisible) return;
-
                     event.preventDefault();
                     event.currentTarget.setPointerCapture?.(
                         event.pointerId
@@ -547,10 +596,12 @@ function PositionOverlay({
                     draggingRef.current = true;
 
                     const move = (moveEvent) => {
-                        if (!draggingRef.current) return;
+                        if (!draggingRef.current || !overlayRef.current) {
+                            return;
+                        }
 
                         const rect =
-                            previewRef.current.getBoundingClientRect();
+                            overlayRef.current.getBoundingClientRect();
 
                         const x =
                             ((moveEvent.clientX - rect.left) /
@@ -588,7 +639,7 @@ function PositionOverlay({
                 }}
             >
                 <div
-                    className="whitespace-nowrap rounded-xl px-4 py-2 text-center shadow-lg"
+                    className="whitespace-nowrap rounded-xl px-4 py-2 text-center shadow-lg ring-2 ring-transparent transition group-hover:ring-black/20"
                     style={{
                         backgroundColor: settings.showBackground
                             ? settings.backgroundColor
@@ -620,9 +671,13 @@ function PositionOverlay({
                     {clip.text}
                 </div>
 
-                {captionVisible && (
-                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/75 px-2 py-0.5 text-[9px] font-semibold text-white">
-                        Drag to position
+                <div className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-2 py-0.5 text-[9px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                    Drag to position
+                </div>
+
+                {!captionVisible && (
+                    <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-2 py-0.5 text-[9px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                        Hidden at this time — showing position preview
                     </div>
                 )}
             </div>
@@ -632,8 +687,6 @@ function PositionOverlay({
 
 export default function Playground() {
     const fileInputRef = useRef(null);
-    const previewRefs = useRef({});
-    const previewSectionRef = useRef(null);
 
     const processedUrlsRef = useRef(new Set());
 
@@ -663,10 +716,6 @@ export default function Playground() {
 
     const processedClips = clips.filter(
         (clip) => clip.processedUrl
-    );
-
-    const hasUnprocessedClips = clips.some(
-        (clip) => !clip.processedUrl
     );
 
     const invalidateProcessed = useCallback(() => {
@@ -1208,9 +1257,15 @@ export default function Playground() {
                                             1
                                         );
 
+                                // FIX: this used to pass only
+                                // `settings.entryAnimation`, so the exit
+                                // transition dropdown had no effect — the
+                                // entry animation type was silently reused
+                                // for the exit phase too.
                                 const animation =
                                     getAnimationState(
                                         settings.entryAnimation,
+                                        settings.exitAnimation,
                                         entryProgress,
                                         exitProgress,
                                         70 * scale
@@ -1266,16 +1321,29 @@ export default function Playground() {
                                         ctx.lineWidth =
                                             strokeWidth;
 
-                                        ctx.strokeText(
-                                            line,
-                                            0,
-                                            lineY
-                                        );
-
-                                        if (
-                                            letterSpacing !== 0
-                                        ) {
-                                            ctx.strokeText = ctx.strokeText;
+                                        // FIX: this branch used to be a
+                                        // dead no-op (`ctx.strokeText =
+                                        // ctx.strokeText`) so stroked text
+                                        // never respected letter spacing —
+                                        // it always drew the whole line as
+                                        // one strokeText call. Now it uses
+                                        // the same per-character tracked
+                                        // drawing as the fill pass.
+                                        if (letterSpacing === 0) {
+                                            ctx.strokeText(
+                                                line,
+                                                0,
+                                                lineY
+                                            );
+                                        } else {
+                                            drawTrackedText(
+                                                ctx,
+                                                line,
+                                                0,
+                                                lineY,
+                                                letterSpacing,
+                                                "stroke"
+                                            );
                                         }
                                     }
 
@@ -1437,13 +1505,6 @@ export default function Playground() {
         }
 
         setIsProcessing(false);
-
-        setTimeout(() => {
-            previewSectionRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-            });
-        }, 150);
     };
 
     const downloadClip = (clip) => {
@@ -1515,6 +1576,7 @@ export default function Playground() {
                 }
             });
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -1526,7 +1588,7 @@ export default function Playground() {
                 <div className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                     <div>
                         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-bold">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5100]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-black" />
                             PLAYGROUND
                         </div>
 
@@ -1567,7 +1629,8 @@ export default function Playground() {
                 </div>
 
                 {notice && (
-                    <div className="mb-6 rounded-xl border border-[#FF5100]/20 bg-[#FF5100]/5 px-4 py-3 text-sm font-semibold text-[#C83F00]">
+                    <div className="mb-6 flex items-start gap-2 rounded-xl border border-black/15 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-black/80">
+                        <FiSliders className="mt-0.5 shrink-0" size={14} />
                         {notice}
                     </div>
                 )}
@@ -1604,11 +1667,11 @@ export default function Playground() {
                             addFiles(event.dataTransfer.files);
                         }}
                         className={`mb-8 flex min-h-[360px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed transition ${isDraggingFiles
-                            ? "border-[#FF5100] bg-[#FF5100]/5"
+                            ? "border-black bg-black/[0.03]"
                             : "border-black/10 bg-white hover:border-black/20"
                             }`}
                     >
-                        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FF5100]/10 text-[#FF5100]">
+                        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-black/10 text-black">
                             <FiUploadCloud size={28} />
                         </div>
 
@@ -1651,6 +1714,7 @@ export default function Playground() {
                                         }
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 transition hover:bg-black/[0.03]"
                                         title="Add videos"
+                                        aria-label="Add videos"
                                     >
                                         <FiFilePlus />
                                     </button>
@@ -1665,7 +1729,7 @@ export default function Playground() {
                                                 setSelectedId(clip.id)
                                             }
                                             className={`mb-2 w-full rounded-xl border p-3 text-left transition ${selectedClip?.id === clip.id
-                                                ? "border-[#FF5100]/30 bg-[#FF5100]/5"
+                                                ? "border-black bg-black/[0.04]"
                                                 : "border-transparent hover:bg-black/[0.03]"
                                                 }`}
                                         >
@@ -1705,7 +1769,8 @@ export default function Playground() {
 
                                                         {clip.status ===
                                                             "processing" && (
-                                                                <span className="text-[9px] font-bold text-[#FF5100]">
+                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-black/70">
+                                                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
                                                                     Rendering...
                                                                 </span>
                                                             )}
@@ -1722,6 +1787,7 @@ export default function Playground() {
                                                 <span
                                                     role="button"
                                                     tabIndex={0}
+                                                    aria-label={`Remove ${clip.name}`}
                                                     onClick={(event) => {
                                                         event.stopPropagation();
                                                         removeClip(clip.id);
@@ -1753,11 +1819,6 @@ export default function Playground() {
                                         key={selectedClip.id}
                                         clip={selectedClip}
                                         settings={settings}
-                                        previewRef={(element) => {
-                                            previewRefs.current[
-                                                selectedClip.id
-                                            ] = element;
-                                        }}
                                         onTextChange={(text) =>
                                             updateClipText(
                                                 selectedClip.id,
@@ -1776,9 +1837,6 @@ export default function Playground() {
                                                 selectedClip.id,
                                                 duration
                                             )
-                                        }
-                                        onInvalidate={
-                                            invalidateProcessed
                                         }
                                     />
                                 )}
@@ -1804,7 +1862,7 @@ export default function Playground() {
                                                 clips.length === 0
                                             }
                                             onClick={applyToAll}
-                                            className="flex items-center justify-center gap-2 rounded-xl bg-[#FF5100] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#E94800] disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             {isProcessing ? (
                                                 <>
@@ -1845,7 +1903,7 @@ export default function Playground() {
 
                                             <div className="h-1.5 overflow-hidden rounded-full bg-black/5">
                                                 <div
-                                                    className="h-full rounded-full bg-[#FF5100] transition-all"
+                                                    className="h-full rounded-full bg-black transition-all"
                                                     style={{
                                                         width: `${(progress.completed /
                                                             Math.max(
@@ -2124,7 +2182,7 @@ export default function Playground() {
                                                         value
                                                     )
                                                 }
-                                                className="rounded-lg border border-black/10 px-3 py-2 text-[10px] font-bold transition hover:border-[#FF5100]/30 hover:bg-[#FF5100]/5"
+                                                className="rounded-lg border border-black/10 px-3 py-2 text-[10px] font-bold transition hover:border-black/30 hover:bg-black/5"
                                             >
                                                 {label}
                                             </button>
@@ -2316,13 +2374,10 @@ export default function Playground() {
                         </div>
 
                         {/* OUTPUTS */}
-                        <section
-                            ref={previewSectionRef}
-                            className="mt-16"
-                        >
+                        <section className="mt-16">
                             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                                 <div>
-                                    <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[#FF5100]">
+                                    <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-black/50">
                                         Output
                                     </p>
 
@@ -2415,12 +2470,16 @@ export default function Playground() {
 function ClipEditor({
     clip,
     settings,
-    previewRef,
     onTextChange,
     onPositionChange,
     onDurationChange,
 }) {
     const videoRef = useRef(null);
+    // FIX: this used to be a callback ref passed all the way down from
+    // Playground (and reused as `previewRef` inside PositionOverlay,
+    // which is what caused the drag bug). ClipEditor now just owns its
+    // own local ref for the video's bounding box.
+    const containerRef = useRef(null);
 
     const [currentTime, setCurrentTime] =
         useState(0);
@@ -2429,9 +2488,6 @@ function ClipEditor({
         useState(0);
 
     const [isPlaying, setIsPlaying] =
-        useState(false);
-
-    const [isScrubbing, setIsScrubbing] =
         useState(false);
 
     useEffect(() => {
@@ -2480,6 +2536,10 @@ function ClipEditor({
     };
 
     const captionRange = useMemo(() => {
+        if (!duration) {
+            return { start: 0, end: 0 };
+        }
+
         let start = 0;
         let end = duration;
 
@@ -2517,7 +2577,7 @@ function ClipEditor({
             {/* VIDEO */}
             <div className="relative flex max-h-[720px] min-h-[450px] items-center justify-center bg-[#111] p-3 sm:p-6">
                 <div
-                    ref={previewRef}
+                    ref={containerRef}
                     className="relative max-h-[680px] w-full max-w-[760px] overflow-hidden rounded-xl bg-black shadow-2xl"
                     style={{
                         aspectRatio:
@@ -2547,7 +2607,6 @@ function ClipEditor({
                     <PositionOverlay
                         clip={clip}
                         settings={settings}
-                        previewRef={previewRef}
                         currentTime={currentTime}
                         duration={duration}
                         onPositionChange={
@@ -2564,6 +2623,7 @@ function ClipEditor({
                         type="button"
                         onClick={togglePlay}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white transition hover:bg-black/80"
+                        aria-label={isPlaying ? "Pause" : "Play"}
                     >
                         {isPlaying ? (
                             <span className="text-xs">Ⅱ</span>
@@ -2583,7 +2643,7 @@ function ClipEditor({
                                 className="pointer-events-none absolute left-0 right-0 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-black/5"
                             >
                                 <div
-                                    className="absolute h-full rounded-full bg-[#FF5100]/25"
+                                    className="absolute h-full rounded-full bg-black/25"
                                     style={{
                                         left: `${(captionRange.start /
                                             duration) *
@@ -2608,13 +2668,7 @@ function ClipEditor({
                             onChange={(event) =>
                                 seek(event.target.value)
                             }
-                            onMouseDown={() =>
-                                setIsScrubbing(true)
-                            }
-                            onMouseUp={() =>
-                                setIsScrubbing(false)
-                            }
-                            className="relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent accent-[#FF5100]"
+                            className="relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent accent-black"
                         />
                     </div>
 
@@ -2666,7 +2720,7 @@ function ClipEditor({
                     }
                     placeholder="Write the caption for this video..."
                     rows={3}
-                    className="w-full resize-none rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-medium outline-none transition placeholder:text-black/25 focus:border-[#FF5100]"
+                    className="w-full resize-none rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-medium outline-none transition placeholder:text-black/25 focus:border-black"
                 />
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-black/40">
